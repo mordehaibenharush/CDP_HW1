@@ -1,23 +1,49 @@
 import numpy as np
-from numba import njit, cuda
+from numba import njit, cuda, prange
 import timeit
 
 
 def matmul_transpose_trivial(X):
-    raise NotImplementedError("To be implemented")
+    result = np.zeros(len(X), len(X))
+    for i in range(len(X)):
+        for j in range(len(X)):
+            for k in range(len(X)):
+                result[i][j] = X[i][k] * X.T[k][j]
+    return result
 
-
-@njit
+@njit(parallel=True)
 def matmul_transpose_numba(X):
-    raise NotImplementedError("To be implemented")
+    result = np.zeros(len(X), len(X))
+    for i in range(len(X)):
+        for j in range(len(X)):
+            for k in prange(len(X)):
+                result[i][j] = X[i][k] * X.T[k][j]
+    return result
 
 
 def matmul_transpose_gpu(X):
-    raise NotImplementedError("To be implemented")
+    res_arr = np.zeros(len(X), len(X))
+    cdata = cuda.to_device(X)
+    cresult = cuda.to_device(res_arr)
+    matmul_kernel[1, 1024](cdata, cresult)
+    result = cresult.copy_to_host()
+
 
 @cuda.jit
 def matmul_kernel(A, C):
-    raise NotImplementedError("To be implemented")
+    result_size = len(A)*len(A)
+    batch_size = result_size//1024 + 1
+    pos = cuda.grid(1)*batch_size
+    limit = pos+batch_size
+    while pos < limit:
+        sum = 0
+        i = pos//len(A)
+        j = pos%len(A)
+        for k in range(len(A[0])):
+            sum += A[i][k] * A.T[k][j]
+        C[i][j] = sum
+        pos += 1
+
 
 #this is the comparison function - keep it as it is, don't change X or Y.
 def matmul_comparison():
