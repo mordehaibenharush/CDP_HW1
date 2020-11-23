@@ -4,25 +4,30 @@ import timeit
 
 
 def matmul_transpose_trivial(X):
-    result = np.zeros(len(X), len(X))
+    #print("***************** trivial ********************")
+    result = np.zeros((len(X), len(X)))
     for i in range(len(X)):
         for j in range(len(X)):
-            for k in range(len(X)):
+            for k in range(len(X.T)):
+                #print("[", i, "] [", j, "]")
                 result[i][j] = X[i][k] * X.T[k][j]
     return result
 
 @njit(parallel=True)
 def matmul_transpose_numba(X):
-    result = np.zeros(len(X), len(X))
-    for i in range(len(X)):
-        for j in range(len(X)):
+    #print("***************** numba ********************")
+    result = np.zeros((len(X), len(X)))
+    for i in prange(len(X)):
+        for j in prange(len(X)):
             for k in prange(len(X)):
+                #print("[", i, "] [", j, "]")
                 result[i][j] = X[i][k] * X.T[k][j]
     return result
 
 
 def matmul_transpose_gpu(X):
-    res_arr = np.zeros(len(X), len(X))
+    #print("***************** gpu ********************")
+    res_arr = np.zeros((len(X), len(X)))
     cdata = cuda.to_device(X)
     cresult = cuda.to_device(res_arr)
     matmul_kernel[1, 1024](cdata, cresult)
@@ -36,23 +41,24 @@ def matmul_kernel(A, C):
     pos = cuda.grid(1)*batch_size
     limit = pos+batch_size
     while pos < limit:
-        sum = 0
+        itr_sum = 0
         i = pos//len(A)
-        j = pos%len(A)
+        j = pos % len(A)
         for k in range(len(A[0])):
-            sum += A[i][k] * A.T[k][j]
-        C[i][j] = sum
+            itr_sum += A[i][k] * A.T[k][j]
+        C[i][j] = itr_sum
         pos += 1
 
 
 #this is the comparison function - keep it as it is, don't change X or Y.
 def matmul_comparison():
     X = np.random.randn(784, 128)
-	Xt = X.copy().transpose()
+    Xt = X.copy().transpose()
+
     def timer(f, functionParameters):
         return min(timeit.Timer(lambda: f(X) if functionParameters == 1 else f(X,Xt)).repeat(3, 100))
 
-    #print('Python:', timer(matmul_transpose_trivial, 1)) we will not consider this since it takes infinite time :)
+    #print('Python:', timer(matmul_transpose_trivial, 1)) #we will not consider this since it takes infinite time :)
     print('Numpy:', timer(np.matmul, 2))
     print('Numba:', timer(matmul_transpose_numba, 1))
     print('CUDA:', timer(matmul_transpose_gpu, 1))

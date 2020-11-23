@@ -66,12 +66,14 @@ class NeuralNetwork(object):
             mini_batches = create_batches(data, labels, self.mini_batch_size)
 
             for x, y in mini_batches:
+                #print("mini batch size ", len(x))
                 self.forward_prop(x)
                 nabla_b, nabla_w = self.back_prop(y)
 
                 self.weights = [w - self.eta * dw for w, dw in zip(self.weights, nabla_w)]
                 self.biases = [b - self.eta * db for b, db in zip(self.biases, nabla_b)]
-
+                print("weight len: ", len(self.weights))
+                print("biases len: ", len(self.biases))
             if validation_data:
                 accuracy = self.validate(validation_data) / 100.0
                 print("Epoch {0}, accuracy {1} %.".format(epoch + 1, accuracy))
@@ -116,10 +118,17 @@ class NeuralNetwork(object):
 
     def forward_prop(self, x):
         self.activations[0] = x
+        print("num layers: ", self.num_layers)
+        print("weight len: ", len(self.weights))
+        print("biases len: ", len(self.biases))
         for i in range(1, self.num_layers):
+            #print("iteration: ", i)
+            #print("activations[i-1]: ", self.activations[i-1].shape)
+            #print("self.weights[i]): ", self.weights[i].shape)
+            #print("biases[i]: ", self.biases[i].shape)
             self.zs[i] = self.matmul(self.activations[i - 1], self.weights[i]) + self.biases[i]
             self.activations[i] = sigmoid(self.zs[i])
-
+        print("****************************")
 
     def back_prop(self, y):
         nabla_b = zeros_biases(self.sizes)
