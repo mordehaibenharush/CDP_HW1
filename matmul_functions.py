@@ -19,7 +19,7 @@ def matmul_transpose_numba(X):
     result = np.zeros((len(X), len(X)))
     for i in prange(len(X)):
         for j in prange(len(X)):
-            for k in prange(len(X)):
+            for k in prange(len(X[0])):
                 #print("[", i, "] [", j, "]")
                 result[i][j] = X[i][k] * X.T[k][j]
     return result
