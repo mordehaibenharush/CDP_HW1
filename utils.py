@@ -19,7 +19,7 @@ def random_weights(sizes):
 
 
 def zeros_weights(sizes):
-    return [np.zeros((sizes[i], sizes[i + 1])) for i in range(len(sizes) - 2)]
+    return [np.zeros((sizes[i], sizes[i + 1])) for i in range(len(sizes) - 1)]
     # zeros_list = []
     # for i in range(len(sizes) - 2):
     #   zeros_list.append(np.zeros((sizes[i], sizes[i + 1])))

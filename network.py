@@ -69,7 +69,8 @@ class NeuralNetwork(object):
                 #print("mini batch size ", len(x))
                 self.forward_prop(x)
                 nabla_b, nabla_w = self.back_prop(y)
-
+                #print("nabla_b len: ", len(nabla_b))
+                #print("nabla_w len: ", len(nabla_w))
                 self.weights = [w - self.eta * dw for w, dw in zip(self.weights, nabla_w)]
                 self.biases = [b - self.eta * db for b, db in zip(self.biases, nabla_b)]
                 print("weight len: ", len(self.weights))
@@ -131,16 +132,23 @@ class NeuralNetwork(object):
         print("****************************")
 
     def back_prop(self, y):
+        print("**********************************")
         nabla_b = zeros_biases(self.sizes)
         nabla_w = [np.array([0])] + zeros_weights(self.sizes)
-
+        print("1111111111111111111111111111111111")
+        print("nabla_b len: ", len(nabla_b))
+        print("nabla_w len: ", len(nabla_w))
         error = (self.activations[-1] - y) * sigmoid_prime(self.zs[-1])
         nabla_b[-1] = np.sum(error, axis=0)
         nabla_w[-1] = self.matmul(self.activations[-2].T, error)
-
+        print("2222222222222222222222222222222222")
+        print("nabla_b len: ", len(nabla_b))
+        print("nabla_w len: ", len(nabla_w))
         for l in range(self.num_layers - 2, 0, -1):
             error = self.matmul(error, self.weights[l + 1].T) * sigmoid_prime(self.zs[l])
             nabla_b[l] = np.sum(error, axis=0)
             nabla_w[l] = self.matmul(self.activations[l - 1].T, error)
-
+        print("33333333333333333333333333333333333")
+        print("nabla_b len: ", len(nabla_b))
+        print("nabla_w len: ", len(nabla_w))
         return nabla_b, nabla_w
