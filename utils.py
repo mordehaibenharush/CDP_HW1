@@ -80,4 +80,9 @@ def testAdd():
 
 
 if __name__ == "__main__":
-    testAdd()
+    #testAdd()
+    rows = np.zeros(10)
+    rows[0] = 1
+    for i in range(1, 10):
+        rows[i] = rows[i - 1] + (i + 1)
+    print(rows)
