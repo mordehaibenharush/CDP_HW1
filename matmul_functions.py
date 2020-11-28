@@ -76,18 +76,20 @@ def matmul_transpose_gpu(X):
 
 @cuda.jit
 def matmul_kernel(A, C):
-    #n = len(A)
-    #result_size = (n*(n+1))/2
-    #batch_size = result_size//1024 + 1
-    i = cuda.grid(1)
-    if i < len(A):
-        for j in range(i+1):
-            itr_sum = 0
-            for k in range(len(A[0])):
-                itr_sum += A[i][k] * A.T[k][j]
-            C[i][j] = itr_sum
-            C[j][i] = itr_sum
-            j += 1
+    batch_size = (len(A)//1024) + 1
+    thread = cuda.grid(1)
+    counter = 0
+    i = thread
+    while counter < batch_size:
+        if i < len(A):
+            for j in range(i+1):
+                itr_sum = 0
+                for k in range(len(A[0])):
+                    itr_sum += A[i][k] * A.T[k][j]
+                C[i][j] = itr_sum
+                C[j][i] = itr_sum
+        i += 1024
+        counter += 1
 
 
 #this is the comparison function - keep it as it is, don't change X or Y.
@@ -105,17 +107,20 @@ def matmul_comparison():
 
 
 def testGPUmatmul():
-    X = np.arange(28).reshape((4, 7))
+    X = np.random.randn(3000, 1)
     Xt = X.copy().transpose()
     res = matmul_transpose_gpu(X)
     comp = np.matmul(X, Xt)
-    print("res shape ", res.shape)
-    print("comp shape ", comp.shape)
+    for i in range(len(X)):
+        for j in range(len(X)):
+            if res[i][j] != comp[i][j]:
+                print("res[", i, "] [", j, "] = ", res[i][j])
+                print("comp[", i, "] [", j, "] = ", comp[i][j])
     if np.allclose(res, comp, 1.e-5):
         print("pass")
     else:
         print("fail")
 
 if __name__ == '__main__':
-    matmul_comparison()
-    #testGPUmatmul()
+    #matmul_comparison()
+    testGPUmatmul()
