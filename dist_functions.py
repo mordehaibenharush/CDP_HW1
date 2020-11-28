@@ -48,7 +48,7 @@ def dist_gpu(A, B, p):
     C = cuda.to_device(C)
     A = cuda.to_device(A)
     B = cuda.to_device(B)
-    dist_kernel[100, 100](A, B, p, C)
+    dist_kernel[1000, 1000](A, B, p, C)
     C = C.copy_to_host()
     res = C[0] ** (1/float(p))
 
@@ -63,8 +63,8 @@ def dist_kernel(A, B, p, C):
    
 #this is the comparison function - keep it as it is.
 def dist_comparison():
-    A = np.random.randint(0,256,(10, 10))
-    B = np.random.randint(0,256,(10, 10))
+    A = np.random.randint(0,256,(1000, 1000))
+    B = np.random.randint(0,256,(1000, 1000))
     p = [1, 2]
 
     def timer(f, q):
