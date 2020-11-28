@@ -10,7 +10,12 @@ def dist_cpu(A, B, p):
      np.array
          p-dist between A and B
      """
-	pass
+    res = 0.0
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            res += abs(A[i][j] - B[i][j])**p
+    res = res ** (1/float(p))
+    return res
 
 
 
@@ -22,20 +27,39 @@ def dist_numba(A, B, p):
      np.array
          p-dist between A and B
      """
-	pass
+    res = 0.0
+    for i in prange(A.shape[0]):
+        for j in prange(A.shape[1]):
+            res += abs(A[i][j] - B[i][j])**p
+    res = res ** (1/float(p))
+    return res
+	
 
 def dist_gpu(A, B, p):
-"""
+    """
      Returns
      -------
      np.array
          p-dist between A and B
      """
-   pass
+    C = np.arange(1)
+    C[0] = 0.0
+    res = 0.0
+    C = cuda.to_device(C)
+    A = cuda.to_device(A)
+    B = cuda.to_device(B)
+    dist_kernel[1000, 1000](A, B, p, C)
+    C = C.copy_to_host()
+    res = C[0] ** (1/float(p))
 
 @cuda.jit
 def dist_kernel(A, B, p, C):
-   pass
+    i = cuda.threadIdx.x
+    j = cuda.blockIdx.x
+    if i < A.shape[0] and j < A.shape[1]:
+        res = abs(A[i][j] - B[i][j])**p
+        cuda.atomic.add(C, 0, res)  # need for every thread to sum near threads
+    
    
 #this is the comparison function - keep it as it is.
 def dist_comparison():
