@@ -4,39 +4,33 @@ import timeit
 
 
 def matmul_transpose_trivial(X):
-    #print("***************** trivial ********************")
     Xt = X.copy().transpose()
-    result = np.zeros((len(X), len(X)))
-    for i in range(len(X)):
-        for j in range(i + 1):
+    result = np.zeros((len(X), len(X))) # initializing result matrix
+    for i in range(len(X)):             # for each row i in matrix A
+        for j in range(i + 1):          # for column j <= i (symmetry)
             itr_sum = 0
             for k in range(len(X[0])):
                 itr_sum += X[i][k] * Xt[k][j]
-            result[i][j] = itr_sum
-            result[j][i] = itr_sum
+            result[i][j] = itr_sum      # in symmetric matrix:
+            result[j][i] = itr_sum      # result[i][j] = result[j][i]
     return result
 
 
 @njit(parallel=True)
 def matmul_transpose_numba(X):
-    #print("***************** numba ********************")
     Xt = X.copy().transpose()
-    result = np.zeros((len(X), len(X)))
-    for i in prange(len(X)):
-        for j in prange(i+1):
+    result = np.zeros((len(X), len(X)))  # initializing result matrix
+    for i in prange(len(X)):             # for each row i in matrix A
+        for j in prange(i+1):            # for column j <= i (symmetry)
             itr_sum = 0
             for k in prange(len(X[0])):
                 itr_sum += X[i][k] * Xt[k][j]
-            result[i][j] = itr_sum
-            result[j][i] = itr_sum
+            result[i][j] = itr_sum       # in symmetric matrix:
+            result[j][i] = itr_sum       # result[i][j] = result[j][i]
     return result
 
 
-
-
-
 def matmul_transpose_gpu_nosym(X):
-    #print("***************** gpu ********************")
     res_arr = np.zeros((len(X), len(X)))
     cdata = cuda.to_device(X)
     cresult = cuda.to_device(res_arr)
@@ -61,34 +55,29 @@ def matmul_nosym_kernel(A, C):
 
 
 def matmul_transpose_gpu(X):
-    #print("***************** gpu ********************")
-    #rows = np.zeros(len(X))
-    #rows[0] = 1
-    #for i in range(1, len(X)):
-    #    rows[i] = rows[i-1]+(i+1)
-    res_arr = np.zeros((len(X), len(X)))
-    cdata = cuda.to_device(X)
-    cresult = cuda.to_device(res_arr)
+    res_arr = np.zeros((len(X), len(X)))    # initializing result matrix
+    cdata = cuda.to_device(X)               # copy matrix X to GPU
+    cresult = cuda.to_device(res_arr)       # copy result matrix to GPU
     matmul_kernel[1, 1024](cdata, cresult)
-    result = cresult.copy_to_host()
+    result = cresult.copy_to_host()         # copy result matrix from GPU
     return result
 
 
 @cuda.jit
 def matmul_kernel(A, C):
-    batch_size = (len(A)//1024) + 1
+    batch_size = (len(A)//1024) + 1  # num of rows each thread will compute
     thread = cuda.grid(1)
     counter = 0
-    i = thread
+    i = thread                       # starting row
     while counter < batch_size:
-        if i < len(A):
-            for j in range(i+1):
+        if i < len(A):               # make sure row still in matrix range
+            for j in range(i+1):     # for column j <= i (symmetry)
                 itr_sum = 0
                 for k in range(len(A[0])):
                     itr_sum += A[i][k] * A.T[k][j]
-                C[i][j] = itr_sum
-                C[j][i] = itr_sum
-        i += 1024
+                C[i][j] = itr_sum    # in symmetric matrix:
+                C[j][i] = itr_sum    # C[i][j] = C[j][i]
+        i += 1024                    # next row
         counter += 1
 
 
@@ -122,5 +111,5 @@ def testGPUmatmul():
         print("fail")
 
 if __name__ == '__main__':
-    #matmul_comparison()
-    testGPUmatmul()
+    matmul_comparison()
+    #testGPUmatmul()
